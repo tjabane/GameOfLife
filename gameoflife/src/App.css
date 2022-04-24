@@ -1,0 +1,14 @@
+@import '~antd/dist/antd.css';
+
+table, td {
+    border: 1px solid;
+}
+
+td {
+    width: 10px;
+    height: 10px;
+}
+
+td:hover {
+    background-color: black;
+}
