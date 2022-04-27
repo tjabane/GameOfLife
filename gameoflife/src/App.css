@@ -9,6 +9,10 @@ td {
     height: 10px;
 }
 
-td:hover {
+.dead {
+    background-color: white;
+}
+
+.alive {
     background-color: black;
 }
