@@ -4,8 +4,8 @@ import './App.css';
 const { Header, Content } = Layout;
 
 function App() {
-  const rowSize = 50;
-  const colomnSize = 100;
+  const rowSize = 100;
+  const colomnSize = 200;
   const [alternate, setAlternate] = useState(false);
   const [mouseDown, setMouseDown] = useState(false);
   const [intervalId, setIntervalId] = useState(0);
@@ -13,13 +13,14 @@ function App() {
 
   useEffect(()=> {
     populateTable(rowSize, colomnSize);
-    function populateTable(row, colomn)  {
-      let results = [];
-      Array(row).fill(0).map(() => results.push(Array(colomn).fill(0)));
-      setCells(results);
-    }
   },[])
 
+  function populateTable(row, colomn)  {
+    let results = [];
+    Array(row).fill(0).map(() => results.push(Array(colomn).fill(0)));
+    setCells(results);
+  }
+  
   const onCellMouseOver = (event) => {
     if(mouseDown)
     {
@@ -35,17 +36,6 @@ function App() {
     markCell(row, col);
   }
 
-  const onStartClick =  () => {
-    let id = setInterval(()=> { 
-                    const nextGen = GetNextGen(cells);
-                    setCells(nextGen);
-                  }, 2000);
-    setIntervalId(id);
-  } 
-
-  const onStopClick = () => {
-    clearInterval(intervalId);
-  }
 
   const markCell = (row, col) => {
     if(cells[row][col] === 0)
@@ -58,6 +48,7 @@ function App() {
 
   const onGridMouseDown = () => setMouseDown(true);
   const onGridMouseUp = () => setMouseDown(false);
+
   const getTD = (value, row, col) => {
     const properties = {
       key : `${row}: ${col}`,
@@ -75,18 +66,31 @@ function App() {
                                             </tr>);
 
   const GetNextGen = grid => {
-    const results = grid.map(n => n);
+    const results = grid.map(n => n.map(val => val));
     for(let i = 0; i < grid.length; i++)
     {
       for(let j = 0; j < grid[0].length; j++)
       {
           const liveCells = GetLiveNeighborsCount(i, j, grid);
-          if(grid[i][j] == 1 && (liveCells === 2 || liveCells === 3))
-            continue;
-          else if(grid[i][j] == 0 && liveCells === 3)
-            results[i][j] = 1;
-          else
+          if(grid[i][j] == 1 && liveCells <= 1)
+          {
             results[i][j] = 0;
+            continue;
+          }
+          if(grid[i][j] == 1 && liveCells >= 4)
+          {
+            results[i][j] = 0;
+            continue;
+          }
+          if(grid[i][j] == 0 && liveCells === 3)
+          {
+            results[i][j] = 1;
+            continue;
+          }
+          if(grid[i][j] == 1 && (liveCells === 2 || liveCells === 3))
+          {
+            continue;
+          }
       }
     }
     return results;
@@ -94,7 +98,8 @@ function App() {
 
   const GetLiveNeighborsCount = (row, colomn, grid) => {
     const neighbors = GetNeighbors(row, colomn, grid);
-    return neighbors.filter(n => n === 1).length;
+    const count = neighbors.filter(n => n === 1).length;
+    return count;
   }
 
   const GetNeighbors = (row, colomn, grid) => {
@@ -118,7 +123,46 @@ function App() {
   }
 
   const isColomnAtBorder = (colomn, y_position, grid) => {
-    return (colomn === 0 && y_position === -1) || (colomn === grid.length - 1 && y_position === 1);
+    return (colomn === 0 && y_position === -1) || (colomn === grid[0].length - 1 && y_position === 1);
+  }
+
+  const onStartClick = async () => {
+    let holder = cells.map(n => n.map(val => val));
+    let id = setInterval(()=> { 
+      holder = GetNextGen(holder);
+      setCells(holder);
+    }, 1000);
+    setIntervalId(id);
+  }
+
+  const onStopClick = () => clearInterval(intervalId);
+
+  const onClearClick = () => {
+    onStopClick();
+    populateTable(rowSize, colomnSize);
+  }
+
+  const onRandomClick = () => {
+    onClearClick();
+    let randomGrid = getRandomGrid();
+    setCells(randomGrid);
+  }
+
+  const getRandomGrid = () => {
+    let randomGrid = cells.map(n => n.map(val => val));
+    const numNodes = getRandomInt(rowSize * colomnSize * 0.01);
+    for(let i = 0; i < numNodes; i++)
+    {
+      let rowIndex = getRandomInt(randomGrid.length -1);
+      let colomnIndex = getRandomInt(randomGrid[0].length - 1);
+      console.log(rowIndex,colomnIndex)
+      randomGrid[rowIndex][colomnIndex] = 1;
+    }
+    return randomGrid;
+  }
+
+  const getRandomInt = max => {
+    return Math.floor(Math.random() * max);
   }
 
   return (
@@ -133,12 +177,18 @@ function App() {
             <Button type="primary" onClick={onStartClick} block>Start</Button>
           </Col>
           <Col span={3}>
-            <Button onClick={onStopClick} danger block>Stop</Button>
+            <Button onClick={onRandomClick} block> Randomize</Button>
+          </Col>
+          <Col span={3}>
+            <Button onClick={onStopClick} danger block> Stop </Button>
+          </Col>
+          <Col span={3}>
+            <Button onClick={onClearClick} danger block> Clear </Button>
           </Col>
         </Row>
         <br/>
         <Row justify='center'>
-          <Col span={12}>
+          <Col span={20}>
             <table onMouseDown={onGridMouseDown} onMouseUp={onGridMouseUp} id='board'>
                 <tbody>
                   {table}
